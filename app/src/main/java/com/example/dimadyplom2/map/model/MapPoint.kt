@@ -6,10 +6,6 @@ data class MapPoint(
     val latitude: Double,
     val longitude: Double,
     val title: String = "",
-    val id: String = nextId()
-) {
-    private companion object {
-        fun nextId(): String = UUID.randomUUID().toString()
-    }
-}
+    val id: String = UUID.randomUUID().toString()
+)
 

@@ -11,27 +11,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import android.util.Log
 import androidx.compose.ui.Modifier
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 import com.example.dimadyplom2.map.model.MapPoint
 import com.example.dimadyplom2.map.repository.PointRepository
 
 class GoogleMapComponent(
-    private val repository: PointRepository,
-    private val initialPosition: LatLng = LatLng(0.0, 0.0),
-    private val initialZoom: Float = 2f
+    private val repository: PointRepository
 ) : MapComponent {
 
     private companion object {
@@ -39,26 +36,26 @@ class GoogleMapComponent(
     }
 
     @Composable
-    override fun Render(modifier: Modifier) {
-        val pointsById = remember {
-            mutableStateMapOf<String, MapPoint>().apply {
-                repository.getAll().forEach { point -> this[point.id] = point }
-            }
-        }
+    override fun Render(
+        modifier: Modifier,
+        points: SnapshotStateMap<String, MapPoint>,
+        cameraPositionState: CameraPositionState
+    ) {
         var selectedId by remember { mutableStateOf<String?>(null) }
         var showClearDialog by remember { mutableStateOf(false) }
-        val cameraPositionState = rememberCameraPositionState {
-            position = CameraPosition.fromLatLngZoom(initialPosition, initialZoom)
-        }
 
         Box(modifier = modifier) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(zoomGesturesEnabled = true),
-                onMapLongClick = { addPoint(pointsById, MapPoint(it.latitude, it.longitude, "New point")) }
+                onMapLongClick = { addPoint(points, MapPoint(it.latitude, it.longitude, "New point")) },
+                // Tapping a labeled place (e.g. "Colosseum") adds a point named after it.
+                onPOIClick = { poi ->
+                    addPoint(points, MapPoint(poi.latLng.latitude, poi.latLng.longitude, poi.name))
+                }
             ) {
-                pointsById.values.forEach { point ->
+                points.values.forEach { point ->
                     key(point.id) {
                         PointMarker(point) { selectedId = point.id }
                     }
@@ -76,11 +73,11 @@ class GoogleMapComponent(
         }
 
         selectedId?.let { id ->
-            val point = pointsById[id] ?: return@let
+            val point = points[id] ?: return@let
             PointDialog(
                 point = point,
-                onRename = { newTitle -> renamePoint(pointsById, id, newTitle); selectedId = null },
-                onDelete = { deletePoint(pointsById, id); selectedId = null },
+                onRename = { newTitle -> renamePoint(points, id, newTitle); selectedId = null },
+                onDelete = { deletePoint(points, id); selectedId = null },
                 onDismiss = { selectedId = null }
             )
         }
@@ -92,7 +89,7 @@ class GoogleMapComponent(
                 text = { Text("Are you sure you want to delete all saved points?") },
                 confirmButton = {
                     TextButton(onClick = {
-                        clearAll(pointsById)
+                        clearAll(points)
                         selectedId = null
                         showClearDialog = false
                     }) {
