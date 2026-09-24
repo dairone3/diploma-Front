@@ -21,4 +21,11 @@ fun formatTripDate(millisUtc: Long): String {
     return formatter.format(Date(millisUtc))
 }
 
+/** Formats a UTC timestamp as ISO-8601 (e.g. "2026-07-15T00:00:00Z") for the backend API. */
+fun formatIso8601Utc(millisUtc: Long): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+    formatter.timeZone = TimeZone.getTimeZone("UTC")
+    return formatter.format(Date(millisUtc))
+}
+
 

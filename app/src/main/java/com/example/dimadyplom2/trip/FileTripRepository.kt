@@ -70,9 +70,7 @@ class FileTripRepository(private val file: File) : TripRepository {
         val id = json.optString("id").ifBlank { return null }
         return Trip(
             name = json.optString("name"),
-            latitude = json.optDouble("latitude"),
-            longitude = json.optDouble("longitude"),
-            startingCity = json.optString("startingCity"),
+            destinations = readDestinations(json),
             startDate = if (json.has("startDate")) json.optLong("startDate") else null,
             endDate = if (json.has("endDate")) json.optLong("endDate") else null,
             createdAt = json.optLong("createdAt", System.currentTimeMillis()),
@@ -80,12 +78,54 @@ class FileTripRepository(private val file: File) : TripRepository {
         )
     }
 
+    /**
+     * Reads the trip's destinations. Supports the current `destinations` array and,
+     * for older saved trips, falls back to the flat `latitude`/`longitude` fields.
+     */
+    private fun readDestinations(json: JSONObject): List<Destination> {
+        val array = json.optJSONArray("destinations")
+        if (array != null) {
+            return buildList {
+                for (i in 0 until array.length()) {
+                    val d = array.optJSONObject(i) ?: continue
+                    add(
+                        Destination(
+                            name = d.optString("name"),
+                            latitude = d.optDouble("latitude"),
+                            longitude = d.optDouble("longitude"),
+                            order = d.optInt("order", i)
+                        )
+                    )
+                }
+            }
+        }
+        // Legacy single-destination trips.
+        if (json.has("latitude") && json.has("longitude")) {
+            return listOf(
+                Destination(
+                    name = json.optString("name"),
+                    latitude = json.optDouble("latitude"),
+                    longitude = json.optDouble("longitude"),
+                    order = 0
+                )
+            )
+        }
+        return emptyList()
+    }
+
     private fun toJson(trip: Trip) = JSONObject().apply {
         put("id", trip.id)
         put("name", trip.name)
-        put("latitude", trip.latitude)
-        put("longitude", trip.longitude)
-        put("startingCity", trip.startingCity)
+        put("destinations", JSONArray().apply {
+            trip.destinations.forEach { d ->
+                put(JSONObject().apply {
+                    put("name", d.name)
+                    put("latitude", d.latitude)
+                    put("longitude", d.longitude)
+                    put("order", d.order)
+                })
+            }
+        })
         trip.startDate?.let { put("startDate", it) }
         trip.endDate?.let { put("endDate", it) }
         put("createdAt", trip.createdAt)

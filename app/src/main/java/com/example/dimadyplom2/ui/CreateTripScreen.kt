@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.dimadyplom2.geocoding.CityGeocoder
 import com.example.dimadyplom2.geocoding.CitySuggestion
+import com.example.dimadyplom2.trip.Destination
 import com.example.dimadyplom2.trip.Trip
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,10 +48,10 @@ private const val MIN_QUERY_LENGTH = 2
 private const val MAX_SUGGESTIONS = 3
 
 /**
- * Screen for creating a new trip. The user fills in an optional starting city
- * ("From where"), a required destination, and an editable trip name that defaults
- * to the destination. Pressing "Create trip" geocodes the destination for map
- * coordinates and hands the built [Trip] back via [onCreateTrip].
+ * Screen for creating a new trip. The user fills in a required destination and an
+ * editable trip name that defaults to the destination. Pressing "Create trip"
+ * geocodes the destination for map coordinates and hands the built [Trip] back via
+ * [onCreateTrip].
  */
 @Composable
 fun CreateTripScreen(
@@ -62,7 +63,6 @@ fun CreateTripScreen(
     val scope = rememberCoroutineScope()
 
     var destination by rememberSaveable { mutableStateOf(initialDestination) }
-    var startingCity by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf(initialDestination) }
     // Once the user edits the name manually, stop mirroring the destination into it.
     var nameEdited by rememberSaveable { mutableStateOf(false) }
@@ -84,15 +84,6 @@ fun CreateTripScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CityAutocompleteField(
-            value = startingCity,
-            onValueChange = { startingCity = it },
-            label = "From where",
-            geocoder = geocoder,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         CityAutocompleteField(
             value = destination,
@@ -122,15 +113,19 @@ fun CreateTripScreen(
                     val top = geocoder.search(destination, maxResults = 1).firstOrNull()
                     val trip = Trip(
                         name = name.ifBlank { destination },
-                        latitude = top?.latitude ?: 0.0,
-                        longitude = top?.longitude ?: 0.0,
-                        startingCity = startingCity,
+                        destinations = listOf(
+                            Destination(
+                                name = destination,
+                                latitude = top?.latitude ?: 0.0,
+                                longitude = top?.longitude ?: 0.0,
+                                order = 0
+                            )
+                        ),
                         startDate = startDate,
                         endDate = endDate
                     )
                     // Clear the fields so the screen is empty next time it's opened.
                     name = ""
-                    startingCity = ""
                     destination = ""
                     nameEdited = false
                     startDate = null

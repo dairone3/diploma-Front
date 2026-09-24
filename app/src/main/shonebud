@@ -1,0 +1,193 @@
+abstract class ServerApi {
+   HttpClient client = HttpClient();
+
+   constructor(string baseUrl, IUserTokenProvider tokenProvider) {
+       // Initialize the HttpClient with any necessary configuration
+   }
+
+   protected fun get(String url): HttpResponse {
+        client.setToken(getToken())
+        return client.get(url)
+        ....
+        extecption, response check, logging, perfomance bencharking, etc, retry
+   }
+   protected fun post(String url): HttpResponse
+   {
+           client.setToken(getToken())
+           return client.post(url)
+    }
+   protected fun put(String url): HttpResponse
+   {
+           client.setToken(getToken())
+           return client.put(url)
+   }
+}
+
+class PointsApi : AppServerApi {
+    constructor(string baseUrl, IUserTokenProvider tokenProvider, string appToken): base(baseUrl, tokenProvider) {
+           // Initialize the HttpClient with any necessary configuration
+       }
+
+       override fun getPoints(): List<Point> {
+           val response = get("/points")
+           return parsePoints(response)
+       }
+}
+
+class TripsApi : ServerApi {
+
+    constructor(string baseUrl, IUserTokenProvider tokenProvider): base(baseUrl, tokenProvider) {
+           // Initialize the HttpClient with any necessary configuration
+       }
+
+    fun getTrips(): List<Trip> {
+        val response = get("/trips")
+        return parseTrips(response)
+    }
+
+    fun createTrip(trip: Trip): Trip {
+        val response = post("/trips", trip)
+        return parseTrip(response)
+    }
+
+    fun updateTrip(trip: Trip): Trip {
+        val response = put("/trips/${trip.id}", trip)
+        return parseTrip(response)
+    }
+}
+
+===========================
+
+interface IHttpClient {
+    fun get(url: String): HttpResponse
+    fun post(url: String, body: Any): HttpResponse
+    fun put(url: String, body: Any): HttpResponse
+}
+
+class UserTokenHttpClient : IHttpClient {
+    HttpClient client = new HttpClient();
+
+    constructor(string baseUrl, IUserTokenProvider tokenProvider) {
+        // Initialize the HttpClient with any necessary configuration
+    }
+
+    override fun get(url: String): HttpResponse {
+        client.setToken(getToken())
+        return client.get(url)
+    }
+
+    override fun post(url: String, body: Any): HttpResponse {
+        client.setToken(getToken())
+        return client.post(url, body)
+    }
+
+    override fun put(url: String, body: Any): HttpResponse {
+        client.setToken(getToken())
+        return client.put(url, body)
+    }
+}
+
+class PublicHttpClient : IHttpClient {
+    HttpClient client = new HttpClient();
+
+   constructor(string baseUrl) {
+       // Initialize the HttpClient with any necessary configuration
+   }
+
+    override fun get(url: String): HttpResponse {
+        return client.get(url)
+    }
+
+    override fun post(url: String, body: Any): HttpResponse {
+        return client.post(url, body)
+    }
+
+    override fun put(url: String, body: Any): HttpResponse {
+        return client.put(url, body)
+    }
+}
+
+class AppTokenHttpClient : IHttpClient {
+    HttpClient client = new HttpClient();
+    string appToken = "your_app_token_here"; // Replace with your actual
+
+   constructor(string baseUrl, string appToken, params.... objects) {
+       // Initialize the HttpClient with any necessary configuration
+   }
+
+    override fun get(url: String): HttpResponse {
+        client.setToken(appToken)
+        return client.get(url)
+    }
+
+    override fun post(url: String, body: Any): HttpResponse {
+        client.setToken(appToken)
+        return client.post(url, body)
+    }
+
+    override fun put(url: String, body: Any): HttpResponse {
+        client.setToken(appToken)
+        return client.put(url, body)
+    }
+}
+
+
+class TripsApi
+{
+    IHttpClient httpClient;
+
+    TripsApi(IHttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
+
+    fun getTrips(): List<Trip> {
+        var response = httpClient.get("/trips")
+        return parseTrips(response)
+    }
+}
+
+var tripsApi = isAndroid ? new TripsApi(new AndroidHttpClient(...)) : new TripsApi(new iOsHttpClient(...))
+var publicTripsApi = new TripsApi(new AppTokenHttpClient(...))
+
+
+class ApiFactory {
+ private ApiFactory() {)
+
+ public static getInstance();
+
+ public func createTripsApi(baseUrl: String, tokenProvider: IUserTokenProvider, appToken: String): TripsApi {
+     if (isAndroid) {
+         return new TripsApi(new AndroidHttpClient(baseUrl, tokenProvider))
+     } else {
+         return new TripsApi(new iOsHttpClient(baseUrl, tokenProvider))
+     }
+ }
+}
+
+
+//class Panel()
+//{
+//
+//    fun ChooseClient () : IHttpClient {
+//
+//        if (Dev)
+//        {
+//            return DevHttpClient(...)
+//        }
+//        if (Public)
+//        {
+//            return PublicHttpClient(..)
+//        }
+//        if (Authorized)
+//        {
+//            return AuthorizedHttpClient()
+//        }
+
+//        throw error()
+//    }
+//
+//    fun onLoginClick() {
+//        AuthService(ChooseClient()).login("login", "password")
+//    }
+//}
+//

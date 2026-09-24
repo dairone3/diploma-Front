@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.dimadyplom2.navigation.AppNavigation
+import com.example.dimadyplom2.ui.AuthGate
 import com.example.dimadyplom2.ui.theme.DimaDyplom2Theme
 
 class MainActivity : ComponentActivity() {
@@ -20,11 +20,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             DimaDyplom2Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNavigation(
+                    // Auth gate is shown over everything else; the rest of the app
+                    // (AppNavigation) stays inaccessible until auth is wired through.
+                    AuthGate(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-
                     )
                 }
             }

@@ -81,7 +81,7 @@ fun TripScreen(
     val mapComponent = remember(tripId) { GoogleMapComponent(repository) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(trip?.latitude ?: 0.0, trip?.longitude ?: 0.0),
+            LatLng(trip?.primaryDestination?.latitude ?: 0.0, trip?.primaryDestination?.longitude ?: 0.0),
             CITY_ZOOM
         )
     }

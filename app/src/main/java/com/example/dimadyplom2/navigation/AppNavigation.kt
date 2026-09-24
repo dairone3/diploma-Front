@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -25,9 +26,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.dimadyplom2.api.ApiFactory
 import com.example.dimadyplom2.data.AppStorage
 import com.example.dimadyplom2.data.FileAppStorage
+import com.example.dimadyplom2.services.UserService
 import com.example.dimadyplom2.trip.Trip
+import com.example.dimadyplom2.ui.AccountScreen
 import com.example.dimadyplom2.ui.HomeScreen
 import com.example.dimadyplom2.ui.MyTripsScreen
 import com.example.dimadyplom2.ui.MyTripsState
@@ -39,6 +43,7 @@ private const val NEW_TRIP_ROUTE = "new_trip"
 private const val MY_TRIPS_GRAPH_ROUTE = "my_trips_graph"
 private const val MY_TRIPS_ROUTE = "my_trips"
 private const val TRIP_ROUTE = "trip"
+private const val ACCOUNT_ROUTE = "account"
 private const val ARG_ID = "id"
 private const val ARG_DESTINATION = "destination"
 
@@ -65,7 +70,8 @@ private data class BottomTab(
 private val bottomTabs = listOf(
     BottomTab(HOME_ROUTE, HOME_ROUTE, "Home", Icons.Filled.Home),
     BottomTab(NEW_TRIP_ROUTE_PATTERN, NEW_TRIP_ROUTE, "Create", Icons.Filled.Add),
-    BottomTab(MY_TRIPS_GRAPH_ROUTE, MY_TRIPS_ROUTE, "My Trips", Icons.AutoMirrored.Filled.List)
+    BottomTab(MY_TRIPS_GRAPH_ROUTE, MY_TRIPS_ROUTE, "My Trips", Icons.AutoMirrored.Filled.List),
+    BottomTab(ACCOUNT_ROUTE, ACCOUNT_ROUTE, "Account", Icons.Filled.Person)
 )
 
 @Composable
@@ -76,6 +82,7 @@ fun AppNavigation(modifier: Modifier = Modifier) {
     // database-backed AppStorage here and nothing else changes.
     val storage: AppStorage = remember { FileAppStorage(context.filesDir) }
     val trips = storage.trips
+    val userService = remember { UserService(ApiFactory.createAuthApi()) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -136,6 +143,10 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 HomeScreen(
                     onCreateTrip = { navController.navigate(NEW_TRIP_ROUTE) }
                 )
+            }
+
+            composable(ACCOUNT_ROUTE) {
+                AccountScreen(onSignOut = { userService.signOut() })
             }
 
             composable(

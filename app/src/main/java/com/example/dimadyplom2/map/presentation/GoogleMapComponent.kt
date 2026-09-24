@@ -18,6 +18,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import android.util.Log
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
@@ -26,6 +31,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.example.dimadyplom2.map.model.MapPoint
 import com.example.dimadyplom2.map.repository.PointRepository
+import com.example.dimadyplom2.R
 
 class GoogleMapComponent(
     private val repository: PointRepository
@@ -50,9 +56,9 @@ class GoogleMapComponent(
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(zoomGesturesEnabled = true),
                 onMapLongClick = { addPoint(points, MapPoint(it.latitude, it.longitude, "New point")) },
-                // Tapping a labeled place (e.g. "Colosseum") adds a point named after it.
+                // Tapping a labeled place (e.g. "Colosseum") saves it as a highlighted point.
                 onPOIClick = { poi ->
-                    addPoint(points, MapPoint(poi.latLng.latitude, poi.latLng.longitude, poi.name))
+                    addPoint(points, MapPoint(poi.latLng.latitude, poi.latLng.longitude, poi.name, isHighlighted = true))
                 }
             ) {
                 points.values.forEach { point ->
@@ -108,15 +114,31 @@ class GoogleMapComponent(
     @Composable
     private fun PointMarker(point: MapPoint, onClick: () -> Unit) {
         val markerState = remember(point.id) { MarkerState(LatLng(point.latitude, point.longitude)) }
+        val context = LocalContext.current
+        // Highlighted (saved-from-Google) places use a red ring; generic pins stay red.
+        val icon = remember(point.isHighlighted) {
+            if (point.isHighlighted) {
+                ringIcon(context)
+            } else {
+                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+            }
+        }
         Marker(
             state = markerState,
             title = point.title,
+            icon = icon,
             onClick = {
                 Log.d(TAG, "Marker clicked: id=${point.id} title='${point.title}'")
                 onClick()
                 true
             }
         )
+    }
+
+    private fun ringIcon(context: android.content.Context): BitmapDescriptor {
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_saved_ring)!!
+        val bitmap = drawable.toBitmap(width = 48, height = 48)
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 
     private fun addPoint(pointsById: MutableMap<String, MapPoint>, point: MapPoint) {

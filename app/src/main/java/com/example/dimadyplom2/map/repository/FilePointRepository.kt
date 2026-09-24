@@ -91,6 +91,7 @@ class FilePointRepository(private val file: File) : PointRepository {
             latitude = json.getDouble("latitude"),
             longitude = json.getDouble("longitude"),
             title = json.optString("title", ""),
+            isHighlighted = json.optBoolean("isHighlighted", false),
             id = id
         )
     }
@@ -99,6 +100,7 @@ class FilePointRepository(private val file: File) : PointRepository {
         put("latitude", point.latitude)
         put("longitude", point.longitude)
         put("title", point.title)
+        put("isHighlighted", point.isHighlighted)
     }
 }
 
